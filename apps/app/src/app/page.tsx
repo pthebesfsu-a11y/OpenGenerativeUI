@@ -36,26 +36,15 @@ export default function HomePage() {
     agent.setState({ templates: [...templates, newTemplate] });
   }, [agent]);
 
-  // Send a prompt to the CopilotChat by finding its textarea and submitting
+  // Send a prompt via the agent API — adds a user message and triggers a run
   const sendPrompt = useCallback((text: string) => {
-    const input = document.querySelector<HTMLTextAreaElement>(
-      '[class*="copilot"] textarea, [data-copilotkit] textarea'
-    );
-    if (input) {
-      const setter = Object.getOwnPropertyDescriptor(
-        window.HTMLTextAreaElement.prototype,
-        "value"
-      )?.set;
-      setter?.call(input, text);
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-      setTimeout(() => {
-        const form = input.closest("form");
-        if (form) {
-          form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
-        }
-      }, 50);
-    }
-  }, []);
+    agent.addMessage({
+      id: crypto.randomUUID(),
+      role: "user",
+      content: text,
+    });
+    agent.runAgent();
+  }, [agent]);
 
   // Widget bridge: handle messages from widget iframes
   useEffect(() => {

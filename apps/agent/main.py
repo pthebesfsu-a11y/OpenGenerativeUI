@@ -60,8 +60,6 @@ agent = create_agent(
           user's new data and render via `widgetRenderer`.
         - When a user asks to see their templates, call `list_templates`.
         - When a user asks to delete a template, call `delete_template`.
-        - A "save-as-template" message from the frontend means the user clicked the save
-          button on a widget. Extract the template details and call `save_template`.
     """,
 )
 
