@@ -1,50 +1,18 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { ExampleLayout } from "@/components/example-layout";
 import { useGenerativeUIExamples, useExampleSuggestions } from "@/hooks";
 import { ExplainerCardsPortal } from "@/components/explainer-cards";
 import { TemplateLibrary } from "@/components/template-library";
 
 import { CopilotChat } from "@copilotkit/react-core/v2";
-import { useAgent } from "@copilotkit/react-core/v2";
 
 export default function HomePage() {
   useGenerativeUIExamples();
   useExampleSuggestions();
 
-  const { agent } = useAgent();
   const [templateDrawerOpen, setTemplateDrawerOpen] = useState(false);
-
-  // Save a template directly to agent state — no chat round-trip
-  const saveTemplate = useCallback((data: {
-    name: string;
-    title: string;
-    description: string;
-    html: string;
-  }) => {
-    const templates = agent.state?.templates || [];
-    const newTemplate = {
-      id: crypto.randomUUID(),
-      name: data.name || data.title || "Untitled Template",
-      description: data.description || data.title || "",
-      html: data.html,
-      data_description: "",
-      created_at: new Date().toISOString(),
-      version: 1,
-    };
-    agent.setState({ templates: [...templates, newTemplate] });
-  }, [agent]);
-
-  // Send a prompt via the agent API — adds a user message and triggers a run
-  const sendPrompt = useCallback((text: string) => {
-    agent.addMessage({
-      id: crypto.randomUUID(),
-      role: "user",
-      content: text,
-    });
-    agent.runAgent();
-  }, [agent]);
 
   // Widget bridge: handle messages from widget iframes
   useEffect(() => {
@@ -52,14 +20,11 @@ export default function HomePage() {
       if (e.data?.type === "open-link" && typeof e.data.url === "string") {
         window.open(e.data.url, "_blank", "noopener,noreferrer");
       }
-      // Handle save-as-template from WidgetRenderer — save directly to state
-      if (e.data?.type === "save-as-template") {
-        saveTemplate(e.data);
-      }
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, [saveTemplate]);
+  }, []);
+
 
   return (
     <>
@@ -147,7 +112,6 @@ export default function HomePage() {
       <TemplateLibrary
         open={templateDrawerOpen}
         onClose={() => setTemplateDrawerOpen(false)}
-        onSendPrompt={sendPrompt}
       />
     </>
   );
