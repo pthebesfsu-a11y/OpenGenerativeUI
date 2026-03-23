@@ -1,6 +1,7 @@
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { z } from 'zod';
 import { CHART_COLORS, CHART_CONFIG } from './config';
+import { SaveTemplateOverlay } from '../save-template-overlay';
 
 export const BarChartProps = z.object({
   title: z.string().describe("Chart title"),
@@ -16,7 +17,9 @@ export const BarChartProps = z.object({
 type BarChartProps = z.infer<typeof BarChartProps>;
 
 export function BarChart({ title, description, data }: BarChartProps) {
-  if (!data || !Array.isArray(data) || data.length === 0) {
+  const hasData = data && Array.isArray(data) && data.length > 0;
+
+  if (!hasData) {
     return (
       <div className="rounded-xl border dark:border-zinc-700 shadow-sm p-6 max-w-2xl mx-auto my-6 bg-[var(--background)]">
         <div className="mb-4">
@@ -35,27 +38,34 @@ export function BarChart({ title, description, data }: BarChartProps) {
   }));
 
   return (
-    <div className="rounded-xl border dark:border-zinc-700 shadow-sm p-6 max-w-2xl mx-auto my-6 bg-[var(--background)]">
-      <div className="mb-4">
-        <h3 className="text-xl font-bold dark:text-white">{title}</h3>
-        <p className="text-sm text-gray-600 dark:text-zinc-400">{description}</p>
-      </div>
+    <SaveTemplateOverlay
+      title={title}
+      description={description}
+      componentType="barChart"
+      componentData={{ title, description, data }}
+    >
+      <div className="rounded-xl border dark:border-zinc-700 shadow-sm p-6 max-w-2xl mx-auto my-6 bg-[var(--background)]">
+        <div className="mb-4">
+          <h3 className="text-xl font-bold dark:text-white">{title}</h3>
+          <p className="text-sm text-gray-600 dark:text-zinc-400">{description}</p>
+        </div>
 
-      <ResponsiveContainer width="100%" height={300}>
-        <RechartsBarChart data={coloredData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-          <XAxis
-            dataKey="label"
-            tick={{ fontSize: 12 }}
-            stroke="var(--chart-axis)"
-          />
-          <YAxis
-            tick={{ fontSize: 12 }}
-            stroke="var(--chart-axis)"
-          />
-          <Tooltip contentStyle={CHART_CONFIG.tooltipStyle} />
-          <Bar isAnimationActive={false} dataKey="value" radius={[4, 4, 0, 0]} />
-        </RechartsBarChart>
-      </ResponsiveContainer>
-    </div>
+        <ResponsiveContainer width="100%" height={300}>
+          <RechartsBarChart data={coloredData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 12 }}
+              stroke="var(--chart-axis)"
+            />
+            <YAxis
+              tick={{ fontSize: 12 }}
+              stroke="var(--chart-axis)"
+            />
+            <Tooltip contentStyle={CHART_CONFIG.tooltipStyle} />
+            <Bar isAnimationActive={false} dataKey="value" radius={[4, 4, 0, 0]} />
+          </RechartsBarChart>
+        </ResponsiveContainer>
+      </div>
+    </SaveTemplateOverlay>
   );
 }
