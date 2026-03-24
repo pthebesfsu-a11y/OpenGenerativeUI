@@ -1,30 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
 import { useAgent } from "@copilotkit/react-core/v2";
 import { TemplateCard } from "./template-card";
-
-/** Submit a message through the CopilotChat textarea so it goes through the full rendering pipeline */
-function submitChatPrompt(text: string) {
-  const textarea = document.querySelector<HTMLTextAreaElement>(
-    '[data-testid="copilot-chat-textarea"]'
-  );
-  if (!textarea) {
-    console.warn("submitChatPrompt: CopilotChat textarea not found — template apply message was not sent.");
-    return;
-  }
-
-  const setter = Object.getOwnPropertyDescriptor(
-    window.HTMLTextAreaElement.prototype, "value"
-  )?.set;
-  setter?.call(textarea, text);
-  textarea.dispatchEvent(new Event("input", { bubbles: true }));
-
-  setTimeout(() => {
-    const form = textarea.closest("form");
-    if (form) form.requestSubmit();
-  }, 150);
-}
 
 interface TemplateLibraryProps {
   open: boolean;
@@ -46,41 +23,24 @@ export function TemplateLibrary({ open, onClose }: TemplateLibraryProps) {
   const { agent } = useAgent();
   const templates: Template[] = agent.state?.templates || [];
 
-  // Apply flow: show input for new data before sending
-  const [applyingTemplate, setApplyingTemplate] = useState<Template | null>(null);
-  const [applyData, setApplyData] = useState("");
-
   const handleApplyClick = (id: string) => {
     const template = templates.find((t) => t.id === id);
-    if (template) {
-      setApplyingTemplate(template);
-      setApplyData("");
-    }
-  };
+    if (!template) return;
 
-  const handleApplyConfirm = useCallback(() => {
-    if (!applyingTemplate) return;
-    const dataDesc = applyData.trim();
-    if (!dataDesc) return;
-
-    // Set pending_template in agent state so the agent knows which template to apply.
-    // Spread full state to guard against replace-style setState.
+    // Attach template as a chip in the chat input — user types their prompt naturally
     agent.setState({
       ...agent.state,
-      pending_template: { id: applyingTemplate.id, name: applyingTemplate.name },
+      pending_template: { id: template.id, name: template.name },
     });
-
-    // Send only the user's data description — no template ID in the message
-    submitChatPrompt(dataDesc);
-
-    setApplyingTemplate(null);
-    setApplyData("");
     onClose();
-  }, [agent, applyingTemplate, applyData, onClose]);
 
-  const handleApplyCancel = () => {
-    setApplyingTemplate(null);
-    setApplyData("");
+    // Focus the chat textarea so user can start typing immediately
+    setTimeout(() => {
+      const textarea = document.querySelector<HTMLTextAreaElement>(
+        '[data-testid="copilot-chat-textarea"]'
+      );
+      textarea?.focus();
+    }, 100);
   };
 
   const handleDelete = (id: string) => {
@@ -193,71 +153,6 @@ export function TemplateLibrary({ open, onClose }: TemplateLibraryProps) {
           )}
         </div>
 
-        {/* Apply data input — slides up from bottom of drawer */}
-        {applyingTemplate && (
-          <div
-            className="shrink-0 px-4 pb-4 pt-3"
-            style={{
-              borderTop: "1px solid var(--color-border-glass, rgba(0,0,0,0.1))",
-              animation: "tmpl-slideIn 0.2s ease-out",
-            }}
-          >
-            <p
-              className="text-xs font-semibold mb-1"
-              style={{ color: "var(--text-primary, #1a1a1a)" }}
-            >
-              Apply &quot;{applyingTemplate.name}&quot;
-            </p>
-            <p
-              className="text-[11px] mb-2"
-              style={{ color: "var(--text-tertiary, #999)" }}
-            >
-              Describe the new data you want to populate this template with:
-            </p>
-            <textarea
-              value={applyData}
-              onChange={(e) => setApplyData(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleApplyConfirm();
-                }
-                if (e.key === "Escape") handleApplyCancel();
-              }}
-              autoFocus
-              placeholder='e.g. "$2,400 web design project for Sarah Chen, due April 15"'
-              rows={2}
-              className="w-full text-xs px-3 py-2 rounded-lg outline-none resize-none"
-              style={{
-                background: "var(--color-background-secondary, #f5f5f5)",
-                color: "var(--text-primary, #1a1a1a)",
-                border: "1px solid var(--color-border-tertiary, rgba(0,0,0,0.1))",
-              }}
-            />
-            <div className="flex gap-2 mt-2">
-              <button
-                onClick={handleApplyConfirm}
-                disabled={!applyData.trim()}
-                className="flex-1 text-xs font-medium py-1.5 rounded-lg text-white transition-all duration-150 disabled:opacity-40"
-                style={{
-                  background: "linear-gradient(135deg, var(--color-lilac-dark, #6366f1), var(--color-mint-dark, #10b981))",
-                }}
-              >
-                Apply Template
-              </button>
-              <button
-                onClick={handleApplyCancel}
-                className="text-xs px-3 py-1.5 rounded-lg"
-                style={{
-                  border: "1px solid var(--color-border-tertiary, rgba(0,0,0,0.1))",
-                  color: "var(--text-secondary, #666)",
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </>
   );
