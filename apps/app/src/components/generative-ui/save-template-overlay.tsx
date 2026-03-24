@@ -50,7 +50,7 @@ export function SaveTemplateOverlay({
       created_at: new Date().toISOString(),
       version: 1,
     };
-    agent.setState({ templates: [...templates, newTemplate] });
+    agent.setState({ ...agent.state, templates: [...templates, newTemplate] });
 
     setTemplateName("");
     setTimeout(() => {

@@ -637,3 +637,8 @@ body, html {
   from { transform: translateY(-4px) scale(0.97); opacity: 0; }
   to   { transform: translateY(0) scale(1); opacity: 1; }
 }
+
+@keyframes chipIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}

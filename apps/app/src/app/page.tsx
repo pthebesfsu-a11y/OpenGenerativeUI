@@ -5,6 +5,7 @@ import { ExampleLayout } from "@/components/example-layout";
 import { useGenerativeUIExamples, useExampleSuggestions } from "@/hooks";
 import { ExplainerCardsPortal } from "@/components/explainer-cards";
 import { TemplateLibrary } from "@/components/template-library";
+import { TemplateChip } from "@/components/template-library/template-chip";
 
 import { CopilotChat } from "@copilotkit/react-core/v2";
 
@@ -107,6 +108,9 @@ export default function HomePage() {
           <ExplainerCardsPortal />
         </div>
       </div>
+
+      {/* Template chip — portal renders above chat input */}
+      <TemplateChip />
 
       {/* Template Library Drawer */}
       <TemplateLibrary

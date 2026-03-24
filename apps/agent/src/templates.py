@@ -154,9 +154,27 @@ def delete_template(template_id: str, runtime: ToolRuntime) -> Command:
     })
 
 
+@tool
+def clear_pending_template(runtime: ToolRuntime) -> Command:
+    """
+    Clear the pending_template from state after applying it.
+    Call this after you have finished applying a template.
+    """
+    return Command(update={
+        "pending_template": None,
+        "messages": [
+            ToolMessage(
+                content="Pending template cleared",
+                tool_call_id=runtime.tool_call_id,
+            )
+        ],
+    })
+
+
 template_tools = [
     save_template,
     list_templates,
     apply_template,
     delete_template,
+    clear_pending_template,
 ]

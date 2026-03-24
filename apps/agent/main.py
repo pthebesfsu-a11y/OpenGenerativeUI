@@ -55,11 +55,16 @@ agent = create_agent(
         You have backend tools: `save_template`, `list_templates`, `apply_template`, `delete_template`.
 
         **When a user asks to apply/recreate a template with new data:**
-        The message includes the template name and ID in the format: "template name" (template-id)
-        1. Call `apply_template(template_id="...")` with the ID from the message
+        Check `pending_template` in state — the frontend sets this when the user picks a template.
+        If `pending_template` is present (has `id` and `name`):
+        1. Call `apply_template(template_id=pending_template["id"])` to retrieve the HTML
         2. Take the returned HTML and COPY IT EXACTLY, only replacing the data values
-           (names, numbers, dates, labels, amounts) to match the user's new data
+           (names, numbers, dates, labels, amounts) to match the user's message
         3. Render the modified HTML using `widgetRenderer`
+        4. Call `clear_pending_template` to reset the pending state
+
+        If no `pending_template` is set but the user mentions a template by name, use
+        `apply_template(name="...")` instead.
 
         CRITICAL: Do NOT rewrite or generate HTML from scratch. Take the original HTML string,
         find-and-replace ONLY the data values, and pass the result to widgetRenderer.

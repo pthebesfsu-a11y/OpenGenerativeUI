@@ -63,21 +63,20 @@ export function TemplateLibrary({ open, onClose }: TemplateLibraryProps) {
     const dataDesc = applyData.trim();
     if (!dataDesc) return;
 
-    const isChart =
-      applyingTemplate.component_type === "barChart" ||
-      applyingTemplate.component_type === "pieChart";
+    // Set pending_template in agent state so the agent knows which template to apply.
+    // Spread full state to guard against replace-style setState.
+    agent.setState({
+      ...agent.state,
+      pending_template: { id: applyingTemplate.id, name: applyingTemplate.name },
+    });
 
-    const chartType = applyingTemplate.component_type === "pieChart" ? "pie chart" : "bar chart";
-    const message = isChart
-      ? `Apply ${chartType} template "${applyingTemplate.name}" (${applyingTemplate.id}) with: ${dataDesc}`
-      : `Apply template "${applyingTemplate.name}" (${applyingTemplate.id}) with: ${dataDesc}`;
-
-    submitChatPrompt(message);
+    // Send only the user's data description — no template ID in the message
+    submitChatPrompt(dataDesc);
 
     setApplyingTemplate(null);
     setApplyData("");
     onClose();
-  }, [applyingTemplate, applyData, onClose]);
+  }, [agent, applyingTemplate, applyData, onClose]);
 
   const handleApplyCancel = () => {
     setApplyingTemplate(null);
@@ -86,6 +85,7 @@ export function TemplateLibrary({ open, onClose }: TemplateLibraryProps) {
 
   const handleDelete = (id: string) => {
     agent.setState({
+      ...agent.state,
       templates: templates.filter((t) => t.id !== id),
     });
   };
