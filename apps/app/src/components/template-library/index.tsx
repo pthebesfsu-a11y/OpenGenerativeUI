@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useAgent } from "@copilotkit/react-core/v2";
 import { TemplateCard } from "./template-card";
 import { SEED_TEMPLATES } from "./seed-templates";
@@ -23,7 +24,24 @@ interface Template {
 export function TemplateLibrary({ open, onClose }: TemplateLibraryProps) {
   const { agent } = useAgent();
   const agentTemplates: Template[] = agent.state?.templates || [];
-  // Merge seed templates with user-saved ones
+
+  // Seed templates into agent state on first render so the backend can find them
+  // via apply_template even when the user asks by name in chat (no pending_template).
+  useEffect(() => {
+    const missing = SEED_TEMPLATES.filter(
+      (s) => !agentTemplates.some((t) => t.id === s.id)
+    );
+    if (missing.length > 0 && agent.state) {
+      agent.setState({
+        ...agent.state,
+        templates: [...agentTemplates, ...missing],
+      });
+    }
+    // Only run when agent state first becomes available
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!agent.state]);
+
+  // Merge seed templates with user-saved ones for display
   const templates: Template[] = [
     ...SEED_TEMPLATES.filter((s) => !agentTemplates.some((t) => t.id === s.id)),
     ...agentTemplates,

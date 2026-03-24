@@ -1,14 +1,60 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useSyncExternalStore, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useAgent } from "@copilotkit/react-core/v2";
 
 /**
- * Renders a dismissible chip inside the CopilotChat input pill when a template
- * is attached (pending_template is set in agent state). Uses a portal to insert
- * itself inside the textarea's column container.
+ * Manages the DOM element used as the portal container for the template chip.
+ * Uses a subscribe/getSnapshot pattern compatible with useSyncExternalStore
+ * to avoid setState-in-effect and ref-during-render lint violations.
+ *
+ * COUPLING NOTE: This depends on CopilotKit's internal DOM structure —
+ * specifically that `[data-testid="copilot-chat-textarea"]` exists and sits inside
+ * a parent column div. If CopilotKit changes this structure, the chip falls back
+ * to rendering inline instead of portaling into the textarea.
  */
+let chipContainer: HTMLElement | null = null;
+const listeners = new Set<() => void>();
+
+function getChipContainer() {
+  return chipContainer;
+}
+
+function subscribeChipContainer(cb: () => void) {
+  listeners.add(cb);
+  return () => { listeners.delete(cb); };
+}
+
+function ensureChipContainer(active: boolean) {
+  if (!active) {
+    if (chipContainer) {
+      chipContainer.remove();
+      chipContainer = null;
+      listeners.forEach((cb) => cb());
+    }
+    return;
+  }
+
+  if (chipContainer) return;
+
+  const textarea = document.querySelector<HTMLElement>(
+    '[data-testid="copilot-chat-textarea"]'
+  );
+  const textareaColumn = textarea?.parentElement;
+  if (!textareaColumn) return;
+
+  let el = textareaColumn.querySelector<HTMLElement>("[data-template-chip]");
+  if (!el) {
+    el = document.createElement("div");
+    el.setAttribute("data-template-chip", "");
+    el.style.cssText = "display: flex; padding: 4px 0 0 0;";
+    textareaColumn.insertBefore(el, textarea);
+  }
+  chipContainer = el;
+  listeners.forEach((cb) => cb());
+}
+
 export function TemplateChip() {
   const { agent } = useAgent();
   const pending = agent.state?.pending_template as
@@ -16,44 +62,26 @@ export function TemplateChip() {
     | null
     | undefined;
 
-  const [container, setContainer] = useState<HTMLElement | null>(null);
+  const container = useSyncExternalStore(subscribeChipContainer, getChipContainer, () => null);
 
   useEffect(() => {
-    if (!pending?.name) {
-      // Clean up existing container
-      document.querySelector("[data-template-chip]")?.remove();
-      setContainer(null);
-      return;
-    }
-
-    const textarea = document.querySelector<HTMLElement>(
-      '[data-testid="copilot-chat-textarea"]'
-    );
-    // The textarea sits inside a column div inside the grid
-    const textareaColumn = textarea?.parentElement;
-    if (!textareaColumn) {
-      setContainer(null);
-      return;
-    }
-
-    // Reuse existing or create chip container
-    let el = textareaColumn.querySelector<HTMLElement>("[data-template-chip]");
-    if (!el) {
-      el = document.createElement("div");
-      el.setAttribute("data-template-chip", "");
-      el.style.cssText = "display: flex; padding: 4px 0 0 0;";
-      textareaColumn.insertBefore(el, textarea);
-    }
-    setContainer(el);
+    ensureChipContainer(!!pending?.name);
   }, [pending?.name]);
+
+  // Clean up DOM node on unmount
+  useEffect(() => {
+    return () => {
+      ensureChipContainer(false);
+    };
+  }, []);
 
   const handleDismiss = useCallback(() => {
     agent.setState({ ...agent.state, pending_template: null });
   }, [agent]);
 
-  if (!pending?.name || !container) return null;
+  if (!pending?.name) return null;
 
-  return createPortal(
+  const chipContent = (
     <div
       className="inline-flex items-center gap-1.5 pl-2 pr-1 py-0.5 rounded-md text-xs font-medium select-none"
       style={{
@@ -101,7 +129,11 @@ export function TemplateChip() {
           <path d="m6 6 12 12" />
         </svg>
       </button>
-    </div>,
-    container
+    </div>
   );
+
+  // Fallback: render inline when CopilotKit DOM structure isn't available
+  if (!container) return chipContent;
+
+  return createPortal(chipContent, container);
 }

@@ -517,6 +517,8 @@ export function WidgetRenderer({ title, description, html }: WidgetRendererProps
 
     const iframe = iframeRef.current;
     if (iframe.contentWindow) {
+      // targetOrigin "*" is required: the sandboxed iframe (allow-scripts only,
+      // no allow-same-origin) has a null origin, so no specific origin can be used.
       iframe.contentWindow.postMessage(
         { type: "update-content", html },
         "*"
