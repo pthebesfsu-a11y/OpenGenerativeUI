@@ -10,14 +10,13 @@ on:
 
 jobs:
   smoke:
-    name: Smoke / ${{ matrix.os }} / Node ${{ matrix.node }} / Python ${{ matrix.python }}
+    name: Smoke / ${{ matrix.os }} / Node ${{ matrix.node }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
         node: [22, 24]
-        python: [3.12, 3.13]
 
     steps:
       - name: Checkout
@@ -28,21 +27,8 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
-
-      - name: Configure uv to use matrix Python version
-        run: echo "UV_PYTHON=python${{ matrix.python }}" >> $GITHUB_ENV
 
       - name: Install dependencies (monorepo)
         run: pnpm install
@@ -75,8 +61,9 @@ jobs:
             fi
           done
 
-          # Clean up background process
+          # Clean up background process (ignore SIGTERM exit code from pnpm)
           kill $FRONTEND_PID 2>/dev/null || true
+          wait $FRONTEND_PID 2>/dev/null || true
 
           if [ "$started" = false ]; then
             echo "❌ Frontend failed to start within 30 seconds"
@@ -127,18 +114,8 @@ jobs:
         with:
           node-version: 22
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12
-
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
 
       - name: Install dependencies
         run: pnpm install
