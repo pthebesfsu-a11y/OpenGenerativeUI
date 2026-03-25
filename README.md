@@ -4,6 +4,8 @@ An open-source showcase for building rich, interactive AI-generated UI with [Cop
 
 https://github.com/user-attachments/assets/ed28c734-e54e-4412-873f-4801da544a7f
 
+https://github.com/user-attachments/assets/ba7db70d-07c0-49af-b221-f962f30245e2
+
 ## What It Does
 
 The agent produces **generative UI** — not just text responses, but fully interactive visual components:
