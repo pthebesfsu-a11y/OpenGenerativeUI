@@ -65,7 +65,6 @@ agent = create_deep_agent(
         **Quality bar**: Every visualization should look polished and portfolio-ready. Use smooth animations, proper lighting (ambient + directional at minimum), responsive canvas sizing (`window.addEventListener('resize', ...)`), and antialiasing (`antialias: true`). No proof-of-concept quality.
 
         **Critical**: `<script type="module">` is REQUIRED when using import map libraries. Regular `<script>` tags cannot use `import` statements.
-
     """,
 )
 

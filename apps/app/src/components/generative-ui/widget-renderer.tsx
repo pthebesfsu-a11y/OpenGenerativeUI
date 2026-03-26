@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { z } from "zod";
-import { SaveTemplateOverlay } from "./save-template-overlay";
+import { ExportOverlay } from "./save-template-overlay";
 import { IDIOMORPH_JS } from "./idiomorph-inline";
 
 // ─── Zod Schema (CopilotKit parameter contract) ─────────────────────
@@ -550,7 +550,7 @@ function useLoadingPhrase(active: boolean) {
 
 // ─── React Component ─────────────────────────────────────────────────
 
-export function WidgetRenderer({ title, description, html }: WidgetRendererProps) {
+export function WidgetRenderer({ title, html }: WidgetRendererProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState(0);
   const [loaded, setLoaded] = useState(false);
@@ -689,9 +689,8 @@ export function WidgetRenderer({ title, description, html }: WidgetRendererProps
         </div>
       )}
 
-      <SaveTemplateOverlay
+      <ExportOverlay
         title={title}
-        description={description}
         html={html}
         componentType="widgetRenderer"
         ready={!!html && htmlSettled}
@@ -716,7 +715,7 @@ export function WidgetRenderer({ title, description, html }: WidgetRendererProps
           }}
           title={title}
         />
-      </SaveTemplateOverlay>
+      </ExportOverlay>
     </div>
   );
 }

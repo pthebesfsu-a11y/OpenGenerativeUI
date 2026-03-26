@@ -12,7 +12,6 @@ export interface DemoItem {
   category: DemoCategory;
   emoji: string;
   prompt: string;
-  html?: string;
 }
 
 export const DEMO_EXAMPLES: DemoItem[] = [
