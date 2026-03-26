@@ -97,7 +97,7 @@ export const THEME_CSS = `
 `;
 
 // ─── Injected CSS: SVG Pre-Built Classes (Layer 4) ───────────────────
-const SVG_CLASSES_CSS = `
+export const SVG_CLASSES_CSS = `
 svg text.t   { font: 400 14px var(--font-sans); fill: var(--p); }
 svg text.ts  { font: 400 12px var(--font-sans); fill: var(--s); }
 svg text.th  { font: 500 14px var(--font-sans); fill: var(--p); }
@@ -216,7 +216,7 @@ svg .c-red text.ts { fill: #A32D2D; }
 `;
 
 // ─── Injected CSS: Form Element Styles (Layer 5) ─────────────────────
-const FORM_STYLES_CSS = `
+export const FORM_STYLES_CSS = `
 * { box-sizing: border-box; margin: 0; }
 
 html { background: transparent; }
