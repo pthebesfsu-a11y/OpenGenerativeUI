@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useRef, type ReactNode } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect, type ReactNode } from "react";
 import { useAgent } from "@copilotkit/react-core/v2";
 import { SEED_TEMPLATES } from "@/components/template-library/seed-templates";
 import {
@@ -41,6 +41,21 @@ export function SaveTemplateOverlay({
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [templateName, setTemplateName] = useState("");
   const [copyState, setCopyState] = useState<"idle" | "copied">("idle");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [menuOpen]);
 
   // Capture pending_template at mount time — it may be cleared by the agent later.
   // Uses ref (not state) to avoid an async re-render that would shift sibling positions
@@ -79,6 +94,7 @@ export function SaveTemplateOverlay({
   const handleSave = useCallback(() => {
     const name = templateName.trim() || title || "Untitled Template";
     setSaveState("saving");
+    setMenuOpen(false);
 
     const templates = agent.state?.templates || [];
     const newTemplate = {
@@ -119,6 +135,7 @@ export function SaveTemplateOverlay({
     if (!exportHtml) return;
     const filename = `${slugify(title) || "visualization"}.html`;
     triggerDownload(exportHtml, filename);
+    setMenuOpen(false);
   }, [exportHtml, title]);
 
   const handleCopy = useCallback(() => {
@@ -126,18 +143,26 @@ export function SaveTemplateOverlay({
     if (!textToCopy) return;
     navigator.clipboard.writeText(textToCopy).then(() => {
       setCopyState("copied");
+      setMenuOpen(false);
       setTimeout(() => setCopyState("idle"), 1800);
     });
   }, [componentType, html, exportHtml]);
 
+  // Show the trigger button only when hovered or menu/save-input is active
+  const showTrigger = ready && (hovered || menuOpen || saveState === "input" || saveState === "saving" || saveState === "saved");
+
   return (
-    <div className="relative">
-      {/* Save as Template button — hidden until content is ready */}
+    <div
+      className="relative"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {/* Action overlay — hidden until hover */}
       <div
-        className="absolute top-2 right-2 z-10 transition-opacity duration-500"
+        className="absolute top-2 right-2 z-10 transition-opacity duration-200"
         style={{
-          opacity: ready ? 1 : 0,
-          pointerEvents: ready ? "auto" : "none",
+          opacity: showTrigger ? 1 : 0,
+          pointerEvents: showTrigger ? "auto" : "none",
         }}
       >
         {/* Saved confirmation */}
@@ -182,7 +207,7 @@ export function SaveTemplateOverlay({
           </div>
         )}
 
-        {/* Name input */}
+        {/* Name input for save-as-template */}
         {saveState === "input" && (
           <div
             className="flex items-center gap-2 rounded-lg px-3 py-2 shadow-lg"
@@ -232,108 +257,88 @@ export function SaveTemplateOverlay({
           </div>
         )}
 
-        {/* Idle with matched template: show download/copy only */}
-        {saveState === "idle" && matchedTemplate && exportHtml && (
-          <div className="flex items-center gap-1.5">
+        {/* Idle: three-dot trigger + dropdown menu */}
+        {saveState === "idle" && (
+          <div ref={menuRef} className="relative">
             <button
-              onClick={handleCopy}
-              className="flex items-center justify-center rounded-lg p-1.5 shadow-md transition-all duration-150 hover:scale-105"
-              style={{
-                background: "var(--surface-primary, #fff)",
-                border: "1px solid var(--color-border-glass, rgba(0,0,0,0.1))",
-                color: copyState === "copied" ? "var(--color-text-success, #3B6D11)" : "var(--text-secondary, #666)",
-              }}
-              title={copyState === "copied" ? "Copied!" : "Copy code"}
-            >
-              {copyState === "copied" ? (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 6 9 17l-5-5" />
-                </svg>
-              ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                </svg>
-              )}
-            </button>
-            <button
-              onClick={handleDownload}
+              onClick={() => setMenuOpen((v) => !v)}
               className="flex items-center justify-center rounded-lg p-1.5 shadow-md transition-all duration-150 hover:scale-105"
               style={{
                 background: "var(--surface-primary, #fff)",
                 border: "1px solid var(--color-border-glass, rgba(0,0,0,0.1))",
                 color: "var(--text-secondary, #666)",
               }}
-              title="Download as HTML"
+              title="Options"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="12" cy="5" r="1.5" />
+                <circle cx="12" cy="12" r="1.5" />
+                <circle cx="12" cy="19" r="1.5" />
               </svg>
             </button>
-          </div>
-        )}
 
-        {/* Idle without matched template: show all action buttons */}
-        {saveState === "idle" && !matchedTemplate && (
-          <div className="flex items-center gap-1.5">
-            {exportHtml && (
-              <>
-                <button
-                  onClick={handleCopy}
-                  className="flex items-center justify-center rounded-lg p-1.5 shadow-md transition-all duration-150 hover:scale-105"
-                  style={{
-                    background: "var(--surface-primary, #fff)",
-                    border: "1px solid var(--color-border-glass, rgba(0,0,0,0.1))",
-                    color: copyState === "copied" ? "var(--color-text-success, #3B6D11)" : "var(--text-secondary, #666)",
-                  }}
-                  title={copyState === "copied" ? "Copied!" : "Copy code"}
-                >
-                  {copyState === "copied" ? (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 6 9 17l-5-5" />
-                    </svg>
-                  ) : (
+            {menuOpen && (
+              <div
+                className="absolute top-full right-0 mt-1 rounded-lg py-1 shadow-lg min-w-[180px]"
+                style={{
+                  background: "var(--surface-primary, #fff)",
+                  border: "1px solid var(--color-border-glass, rgba(0,0,0,0.1))",
+                  animation: "tmpl-slideIn 0.15s ease-out",
+                }}
+              >
+                {exportHtml && (
+                  <>
+                    <button
+                      onClick={handleCopy}
+                      className="flex items-center gap-2.5 w-full px-3 py-2 text-xs text-left transition-colors duration-100"
+                      style={{ color: copyState === "copied" ? "var(--color-text-success, #3B6D11)" : "var(--text-primary, #1a1a1a)" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-background-secondary, #f5f5f5)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    >
+                      {copyState === "copied" ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20 6 9 17l-5-5" />
+                        </svg>
+                      ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                      )}
+                      {copyState === "copied" ? "Copied!" : "Copy to clipboard"}
+                    </button>
+                    <button
+                      onClick={handleDownload}
+                      className="flex items-center gap-2.5 w-full px-3 py-2 text-xs text-left transition-colors duration-100"
+                      style={{ color: "var(--text-primary, #1a1a1a)" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-background-secondary, #f5f5f5)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
+                      Download file
+                    </button>
+                  </>
+                )}
+                {!matchedTemplate && (
+                  <button
+                    onClick={() => { setMenuOpen(false); setSaveState("input"); }}
+                    className="flex items-center gap-2.5 w-full px-3 py-2 text-xs text-left transition-colors duration-100"
+                    style={{ color: "var(--text-primary, #1a1a1a)" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-background-secondary, #f5f5f5)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                  >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                      <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
                     </svg>
-                  )}
-                </button>
-                <button
-                  onClick={handleDownload}
-                  className="flex items-center justify-center rounded-lg p-1.5 shadow-md transition-all duration-150 hover:scale-105"
-                  style={{
-                    background: "var(--surface-primary, #fff)",
-                    border: "1px solid var(--color-border-glass, rgba(0,0,0,0.1))",
-                    color: "var(--text-secondary, #666)",
-                  }}
-                  title="Download as HTML"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                  </svg>
-                </button>
-              </>
+                    Save as artifact
+                  </button>
+                )}
+              </div>
             )}
-            <button
-              onClick={() => setSaveState("input")}
-              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium shadow-md transition-all duration-150 hover:scale-105"
-              style={{
-                background: "var(--surface-primary, #fff)",
-                border: "1px solid var(--color-border-glass, rgba(0,0,0,0.1))",
-                color: "var(--text-secondary, #666)",
-              }}
-              title="Save as Template"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
-              </svg>
-              Save as Template
-            </button>
           </div>
         )}
       </div>
