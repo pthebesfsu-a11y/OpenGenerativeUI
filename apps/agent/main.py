@@ -53,6 +53,20 @@ agent = create_deep_agent(
         - Pre-styled form elements (buttons, inputs, sliders look native automatically)
         - Pre-built SVG CSS classes for color ramps (.c-purple, .c-teal, .c-blue, etc.)
 
+        ## Visualization Quality Standards
+
+        The iframe has an import map with these ES module libraries — use `<script type="module">` and bare import specifiers:
+        - `three` — 3D graphics. `import * as THREE from "three"`. Also `three/examples/jsm/controls/OrbitControls.js` for camera controls.
+        - `gsap` — animation. `import gsap from "gsap"`.
+        - `d3` — data visualization and force layouts. `import * as d3 from "d3"`.
+        - `chart.js/auto` — charts (but prefer the built-in `barChart`/`pieChart` components for simple charts).
+
+        **3D content**: ALWAYS use Three.js with proper WebGL rendering. Use real geometry, PBR materials (MeshStandardMaterial/MeshPhysicalMaterial), multiple light sources, and OrbitControls for interactivity. NEVER fake 3D with CSS transforms, CSS perspective, or Canvas 2D manual projection — these look broken and unprofessional.
+
+        **Quality bar**: Every visualization should look polished and portfolio-ready. Use smooth animations, proper lighting (ambient + directional at minimum), responsive canvas sizing (`window.addEventListener('resize', ...)`), and antialiasing (`antialias: true`). No proof-of-concept quality.
+
+        **Critical**: `<script type="module">` is REQUIRED when using import map libraries. Regular `<script>` tags cannot use `import` statements.
+
         ## UI Templates
 
         Users can save generated UIs as reusable templates and apply them later.
