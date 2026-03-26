@@ -1,19 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { ExampleLayout } from "@/components/example-layout";
 import { useGenerativeUIExamples, useExampleSuggestions } from "@/hooks";
 import { ExplainerCardsPortal } from "@/components/explainer-cards";
-import { TemplateLibrary } from "@/components/template-library";
-import { TemplateChip } from "@/components/template-library/template-chip";
 
 import { CopilotChat } from "@copilotkit/react-core/v2";
 
 export default function HomePage() {
   useGenerativeUIExamples();
   useExampleSuggestions();
-
-  const [templateDrawerOpen, setTemplateDrawerOpen] = useState(false);
 
   // Widget bridge: handle messages from widget iframes
   useEffect(() => {
@@ -60,23 +56,6 @@ export default function HomePage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                {/* Template Library toggle */}
-                <button
-                  onClick={() => setTemplateDrawerOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium no-underline whitespace-nowrap transition-all duration-150 hover:-translate-y-px"
-                  style={{
-                    color: "var(--text-secondary)",
-                    border: "1px solid var(--color-border-glass, rgba(0,0,0,0.1))",
-                    background: "var(--surface-primary, rgba(255,255,255,0.6))",
-                    fontFamily: "var(--font-family)",
-                  }}
-                  title="Open Template Library"
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
-                  </svg>
-                  Templates
-                </button>
                 <a
                   href="https://github.com/CopilotKit/OpenGenerativeUI"
                   target="_blank"
@@ -105,14 +84,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Template chip — portal renders above chat input */}
-      <TemplateChip />
-
-      {/* Template Library Drawer */}
-      <TemplateLibrary
-        open={templateDrawerOpen}
-        onClose={() => setTemplateDrawerOpen(false)}
-      />
     </>
   );
 }
