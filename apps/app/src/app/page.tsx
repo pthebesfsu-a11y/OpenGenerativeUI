@@ -6,6 +6,7 @@ import { useGenerativeUIExamples, useExampleSuggestions } from "@/hooks";
 import { ExplainerCardsPortal } from "@/components/explainer-cards";
 import { DemoGallery, type DemoItem } from "@/components/demo-gallery";
 import { GridIcon } from "@/components/demo-gallery/grid-icon";
+import { DesktopTipModal } from "@/components/desktop-tip-modal";
 import { CopilotChat, useAgent, useCopilotKit } from "@copilotkit/react-core/v2";
 
 export default function HomePage() {
@@ -115,6 +116,8 @@ export default function HomePage() {
         onClose={() => setDemoDrawerOpen(false)}
         onTryDemo={handleTryDemo}
       />
+
+      <DesktopTipModal />
     </>
   );
 }
