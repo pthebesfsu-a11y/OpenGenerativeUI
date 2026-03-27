@@ -24,7 +24,7 @@ export function DemoCard({ demo, onTry }: DemoCardProps) {
   return (
     <button
       onClick={() => onTry(demo)}
-      className="rounded-xl overflow-hidden flex flex-col text-left transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer w-full"
+      className="demo-gallery-card rounded-xl overflow-hidden flex flex-col text-left transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer w-full"
       style={{
         border: "1px solid var(--color-border-glass, rgba(0,0,0,0.1))",
         background: "var(--surface-primary, #fff)",

@@ -19,7 +19,7 @@ export function CategoryFilter({ selected, onSelect }: CategoryFilterProps) {
           <button
             key={cat ?? "all"}
             onClick={() => onSelect(cat)}
-            className="shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150 cursor-pointer"
+            className="demo-gallery-chip shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150 cursor-pointer"
             style={{
               background: isActive
                 ? "linear-gradient(135deg, var(--color-lilac-dark, #6366f1), var(--color-mint-dark, #10b981))"
